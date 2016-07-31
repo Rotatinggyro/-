@@ -1,0 +1,288 @@
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h>
+#include <errno.h>
+#define ECHOFLAGS (ECHO | ECHOE | ECHOK | ECHONL)
+#define N 3
+struct player
+{
+    int number;
+    char name[20];
+    int draw;
+    int win;
+    int lose;
+}stu[N];
+int set_disp_mode(int fd,int option)
+{
+    int err;
+    struct termios term;
+    if(tcgetattr(fd,&term)==-1){
+        perror("Cannot get the attribution of the terminal");
+        return 1;
+    }
+    if(option)
+        term.c_lflag|=ECHOFLAGS;
+    else
+        term.c_lflag &=~ECHOFLAGS;
+    err=tcsetattr(fd,TCSAFLUSH,&term);
+    if(err==-1 && err==EINTR){
+        perror("Cannot set the attribution of the terminal");
+        return 1;
+    }
+    return 0;
+}
+//函数getpasswd获得用户的手势
+char getpasswd(int cas)
+{
+    int c;
+    int n = 0;
+    char ch;
+    printf("Please input no.%d player motivation:\n",cas);
+    printf("<0-剪刀 1-石头 2-布\n");
+    ch=getchar();
+    getchar();
+    return ch;
+}
+int menu()
+{
+    int i;
+    printf("请选择游戏模式\n");
+    printf("1-练习模式 2-对战模式 3-排行榜 0-退出游戏\n");
+    scanf("%d",&i);
+    system("clear");
+    return i;   
+}
+void practice_pattern()
+{
+    int i,x,y,draw=0,win=0,lose=0;
+    srand(time(0));
+    printf("你有三次选择的机会，现在请选择你的手势：<0-剪刀 1-石头 2-布>\n");
+    for(i=1;i<=3;i++)
+    {
+        scanf("%d",&x);
+        y=rand()%3;
+        printf("%d",y);
+        if(x==y)
+        {
+            printf("平局\n");draw++;
+        }
+        else if(x==0&&y==2)
+        {
+            printf("你赢了\n");win++;
+        }
+        else if(x==1&&y==0)
+        {
+            printf("你赢了\n");win++;
+        }
+        else if(x==2&&y==1)
+        {
+            printf("你赢了\n");win++;break;
+        }
+        else
+        {
+            printf("你输了\n");lose++;
+        }
+        if(win==2||lose==2) break;
+    }
+    if(win==lose) printf("最终平局了\n");
+    else if(win>lose) printf("最终你赢了!\n");
+    else printf("最终你输了!\n");
+}
+void fight_pattern()
+{
+    int i=0;
+    // struct player *temporary3=p;
+    char x,y,temporary,ch;
+    int ca=1;
+    for(int i=0;i<N;i++)
+    {
+        printf("input no.%d people's id:\n",ca);
+        scanf("%d",&stu[i].number);
+        printf("input no.%d people's name:\n",ca++);
+        scanf("%s",stu[i].name);
+    }
+    getchar();
+    while(1)
+    {
+        system("clear");
+        //函数set_disp_mode用于控制是否开启输入回显功能       //如果option为0，则关闭回显，为1则打开回显
+        char pp,name1[20];
+        char qq;
+        char  name2[20];
+        printf("Please Input the first player names:");
+        scanf("%s",name1);
+        getchar();
+        printf("Please Input the second player names:");
+        scanf("%s",name2);
+        getchar();
+      
+        set_disp_mode(STDIN_FILENO,0);
+        //调用getpasswd函数获得用户输入的手势
+        pp=getpasswd(1);
+        qq=getpasswd(2);
+        system("clear");
+        int flag=0;
+        int a=pp-'0';
+        int b=qq-'0';
+        if(b==(a+1)%3)
+            flag=2;
+        else if(a==b)
+            flag=0;
+        else
+            flag =1;
+        if(flag==0)
+        {
+            printf("equal\n");
+        }
+        if(flag==1)
+        {
+            for(int i=0;i<strlen(name1);i++)
+            {
+                printf("%c",name1[i]);
+            }
+            printf(" win!\n");
+            for(int i=0;i<N;i++)
+            {
+                for(int j=0;j<strlen(stu[i].name);j++)
+                {
+                    if(name1[j]!=stu[i].name[j])
+                    {
+                        break;
+                    }
+                    if(j==strlen(stu[i].name)-1)
+                    {
+                        stu[i].draw++;
+                    }
+                }
+            }
+            for(int i=0;i<N;i++)
+            {
+                for(int j=0;j<strlen(stu[i].name);j++)
+                {
+                    if(name2[j]!=stu[i].name[j])
+                    {
+                        break;
+                    }
+                    if(j==strlen(stu[i].name)-1)
+                    {
+                        stu[i].draw--;
+                    }
+                }
+            }
+        }
+        int mark=0;
+        int markn=0;
+        if(flag==2)
+        {
+            for(int i=0;i<strlen(name2);i++)
+            {
+                printf("%c",name2[i]);
+            }
+            printf(" win!\n");
+            for(int i=0;i<N;i++)
+            {
+                for(int j=0;j<strlen(stu[i].name);j++)
+                {
+                    if(name2[j]!=stu[i].name[j])
+                    {
+                        break;
+                    }
+                    if(j==strlen(stu[i].name)-1)
+                    {
+                        stu[i].draw++;
+                        mark=1;
+                    }
+                }
+                if(mark==1)
+                    break;
+            }
+            mark=0;
+            for(int i=0;i<N;i++)
+            {
+                for(int j=0;j<strlen(stu[i].name);j++)
+                {
+                    if(name1[j]!=stu[i].name[j])
+                    {
+                        break;
+                    }
+                    if(j==strlen(stu[i].name)-1)
+                    {
+                        stu[i].draw--;
+                        mark=1;
+                    }
+                }
+                if(mark==1)
+                    break;
+            }
+            
+        }
+        printf("1's motivation is:%c\n",pp);
+        printf("2's motivation is:%c\n",qq);
+        set_disp_mode(STDIN_FILENO,1);      
+        printf("第一轮游戏已经结束，继续请输入Y/结束请输入N\n");
+        ch=getchar();
+        if(ch=='N')
+        {
+            break;
+        }
+        while(ch!='Y')
+        {
+            printf("输入无效，请重新输入\n");
+            printf("继输入Y/结束请输入N续请\n");
+            getchar();
+            ch=getchar();
+            if(ch=='N')
+                {
+                    markn=1;
+                    break;
+                }
+        }
+        if(markn==1)
+            break;
+        else
+            continue;
+    }
+}
+void ranking_list(struct player *p)
+{
+    int a,b,c,e,d;
+    struct player temporary;
+    for(a=0;a<N-1;a++)
+    {
+        c=a;
+        for(b=a+1;b<N;b++)
+        {
+            if(p[c].draw<p[b].draw)
+                e=d;
+        }
+        temporary=p[a];
+        p[a]=p[c];
+        p[c]=temporary;
+        
+    }
+    for(a=0;a<=N;a++)
+    {
+        printf("%d %s\n",p[a].draw,p[a].name);
+    }
+    
+}
+int main(void)
+{
+    int chose=0;
+    while(1){
+        chose=menu();
+        if(chose==0) break;
+        switch(chose)
+        {
+            case 1:practice_pattern();break;
+            case 2:fight_pattern();break;
+            case 3:ranking_list(stu);break;
+            default:printf("请重新选择模式\n");break;
+        }
+    }
+    return 0;
+    
+}
+
